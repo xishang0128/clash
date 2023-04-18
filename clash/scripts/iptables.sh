@@ -54,16 +54,10 @@ start_redirect() {
   ${iptables} -t nat -N LOCAL
   ${iptables} -t nat -F LOCAL
 
-  if [ "${bin_name}" = "clash" ] ; then
-    ${iptables} -t nat -A EXTERNAL -p udp --dport 53 -j REDIRECT --to-ports ${dns_port}
-    ${iptables} -t nat -A LOCAL -p udp --dport 53 -j REDIRECT --to-ports ${dns_port}
-    ${iptables} -t nat -A EXTERNAL -d ${fakeip_range} -p icmp -j DNAT --to-destination 127.0.0.1
-    ${iptables} -t nat -A LOCAL -d ${fakeip_range} -p icmp -j DNAT --to-destination 127.0.0.1
-#  else
-#    Other types of inbound should be added here to receive DNS traffic instead of sniffing
-#    ${iptables} -t nat -A EXTERNAL -p udp --dport 53 -j REDIRECT --to-ports ${redir_port}
-#    ${iptables} -t nat -A LOCAL -p udp --dport 53 -j REDIRECT --to-ports ${redir_port}
-  fi
+  ${iptables} -t nat -A EXTERNAL -p udp --dport 53 -j REDIRECT --to-ports ${dns_port}
+  ${iptables} -t nat -A LOCAL -p udp --dport 53 -j REDIRECT --to-ports ${dns_port}
+  ${iptables} -t nat -A EXTERNAL -d ${fakeip_range} -p icmp -j DNAT --to-destination 127.0.0.1
+  ${iptables} -t nat -A LOCAL -d ${fakeip_range} -p icmp -j DNAT --to-destination 127.0.0.1
 
   for subnet in ${intranet[@]} ; do
     ${iptables} -t nat -A EXTERNAL -d ${subnet} -j RETURN
