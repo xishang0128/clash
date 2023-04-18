@@ -36,10 +36,10 @@ ignore_out_list=()
 
 getdns(){
 if [ -z "$dnshead" ]; then
-  dnshead=`grep dns: -n $path/clash/config1.yaml | awk -F ':' '{print $1}'`
+  dnshead=`grep dns: -n $path/clash/config.yaml | awk -F ':' '{print $1}'`
   dnstail=$(expr "$dnshead" + 1)
 fi
-dns=$(cat $path/clash/config1.yaml | tail -n +"$dnstail" | head -n "1" | grep "  ")
+dns=$(cat $path/clash/config.yaml | tail -n +"$dnstail" | head -n "1" | grep "  ")
 if [ -n "$dns" ]; then
   dnstail=$(expr "$dnstail" + 1)
   getdns
