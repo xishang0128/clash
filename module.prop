@@ -1,0 +1,6 @@
+id=Clash_For_Magisk
+name=clash+mosdns for magisk
+version=1.0
+versionCode=20220803
+author=atri
+description=利用tproxy支持Clash的透明代理,外挂mosdns.
