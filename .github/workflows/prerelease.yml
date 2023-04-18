@@ -19,7 +19,7 @@ jobs:
           wget -O ./clash/clash/geoip.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat
           wget -O ./clash/clash/geosite.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite-lite.dat
           chmod +x installcore.sh && ./installcore.sh
-          zip -r -o -X -ll clash.zip ./ -x '.git/*' -x 'readme.md' -x '.github/*' -x 'installcore.sh'
+          zip -r -o -X -ll clash.zip ./ -x '.git/*' -x 'README.md' -x '.github/*' -x 'installcore.sh'
 
       - name: Delete current prerelease assets
         uses: andreaswilli/delete-release-assets-action@v2.0.0
