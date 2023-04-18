@@ -21,6 +21,7 @@ fi
 
 if [ $size = $filesize ]; then
   gzip -d ./clash.gz
+  ls -al
   mv ./clash ./clash/bin/clash
 else
   echo 更新失败了喵,压缩包校验失败
