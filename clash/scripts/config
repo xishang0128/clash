@@ -36,8 +36,8 @@ ignore_out_list=()
 
 getdns(){
 if [ -z "$dnshead" ]; then
-dnshead=`grep dns: -n $path/clash/config1.yaml | awk -F ':' '{print $1}'`
-dnstail=$(expr "$dnshead" + 1)
+  dnshead=`grep dns: -n $path/clash/config1.yaml | awk -F ':' '{print $1}'`
+  dnstail=$(expr "$dnshead" + 1)
 fi
 dns=$(cat $path/clash/config1.yaml | tail -n +"$dnstail" | head -n "1" | grep "  ")
 if [ -n "$dns" ]; then
@@ -52,7 +52,7 @@ getdns
 redir_port="$(cat ${path}/clash/config.yaml | grep "redir-port" | awk -F ':' '{print $2}')"
 tproxy_port="$(cat ${path}/clash/config.yaml | grep "tproxy-port" | awk -F ':' '{print $2}')"
 
-dns_listen=$(cat $path/clash/config1.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "listen:" | awk -F ': ' '{print $2}')
+dns_listen=$(cat $path/clash/config.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "listen:" | awk -F ': ' '{print $2}')
 dns_port=$(echo $dns_listen | awk -F ':' '{print $2}')
-fakeip_range=$(cat $path/clash/config1.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "fake-ip-range:" | awk -F ': ' '{print $2}')
+fakeip_range=$(cat $path/clash/config.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "fake-ip-range:" | awk -F ': ' '{print $2}')
 
