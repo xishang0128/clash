@@ -25,7 +25,11 @@ proxy-providers:
     url: ""
     path: ./proxy_providers/provider2.yaml
 
-mixed-port: 7890
+port: 7890
+socks-port: 7891
+mixed-port: 7892
+redir-port: 7893
+tproxy-port: 7894
 unified-delay: false
 geodata-mode: true
 tcp-concurrent: false
@@ -87,6 +91,7 @@ dns:
     "geosite:cn,private":
     - https://doh.pub/dns-query
     - https://dns.alidns.com/dns-query
+
 
 proxies:
 
