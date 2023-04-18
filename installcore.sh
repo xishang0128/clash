@@ -22,6 +22,7 @@ fi
 if [ $size = $filesize ]; then
   gzip -d ./clashcore.gz
   ls -al
+  mkdir -p ./clash/bin
   mv ./clashcore ./clash/bin/clash
 else
   echo 更新失败了喵,压缩包校验失败
