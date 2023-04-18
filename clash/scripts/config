@@ -56,6 +56,3 @@ dns_listen=$(cat $path/clash/config1.yaml | head -n "$dnstail" | tail -n +"$dnsh
 dns_port=$(echo $dns_listen | awk -F ':' '{print $2}')
 fakeip_range=$(cat $path/clash/config1.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "fake-ip-range:" | awk -F ': ' '{print $2}')
 
-
-
-echo $redir_port $tproxy_port $dns_listen $dns_port $fakeip_range
