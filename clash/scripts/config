@@ -10,12 +10,6 @@ bin_path="${path}/bin/${bin_name}"
 run_path="${path}/run"
 pid_file="${run_path}/${bin_name}.pid"
 
-redir_port="$(cat ${path}/clash/config.yaml | grep "redir-port" | awk -F ':' '{print $2}')"
-tproxy_port="$(cat ${path}/clash/config.yaml | grep "tproxy-port" | awk -F ':' '{print $2}')"
-
-dns_port="1053"
-dns_listen="0.0.0.0:${dns_port}"
-fakeip_range="28.0.0.1/8"
 tun_device="tun0"
 
 user_group="root:net_admin"
@@ -37,3 +31,31 @@ user_packages_list=()
 
 ap_list=("wlan+" "ap+" "rndis+")
 ignore_out_list=()
+
+
+
+getdns(){
+if [ -z "$dnshead" ]; then
+dnshead=`grep dns: -n $path/clash/config1.yaml | awk -F ':' '{print $1}'`
+dnstail=$(expr "$dnshead" + 1)
+fi
+dns=$(cat $path/clash/config1.yaml | tail -n +"$dnstail" | head -n "1" | grep "  ")
+if [ -n "$dns" ]; then
+  dnstail=$(expr "$dnstail" + 1)
+  getdns
+else
+  dnstail=$(expr "$dnstail" - 1)
+fi
+}
+getdns
+
+redir_port="$(cat ${path}/clash/config.yaml | grep "redir-port" | awk -F ':' '{print $2}')"
+tproxy_port="$(cat ${path}/clash/config.yaml | grep "tproxy-port" | awk -F ':' '{print $2}')"
+
+dns_listen=$(cat $path/clash/config1.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "listen:" | awk -F ': ' '{print $2}')
+dns_port=$(echo $dns_listen | awk -F ':' '{print $2}')
+fakeip_range=$(cat $path/clash/config1.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "fake-ip-range:" | awk -F ': ' '{print $2}')
+
+
+
+echo $redir_port $tproxy_port $dns_listen $dns_port $fakeip_range
