@@ -45,7 +45,7 @@ if [ -n "$dns" ]; then
   getdns
 else
   dnstail=$(expr "$dnstail" - 1)
-fi
+fi #
 }
 getdns
 
