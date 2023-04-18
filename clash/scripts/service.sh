@@ -7,15 +7,15 @@ scripts_dir=$(dirname `realpath $0`)
 source ${scripts_dir}/config
 
 mkdir -p ${run_path}
-mkdir -p ${box_path}/${bin_name}
+mkdir -p ${path}/${bin_name}
 
-# ${box_path}/bin/yq -i ".tproxy-port=${tproxy_port}" ${box_path}/clash/config.yaml
-# ${box_path}/bin/yq -i ".dns.listen=\"${clash_dns_listen}\"" ${box_path}/clash/config.yaml
-# ${box_path}/bin/yq -i ".dns.fake-ip-range=\"${clash_fake_ip_range}\"" ${box_path}/clash/config.yaml
+# ${path}/bin/yq -i ".tproxy-port=${tproxy_port}" ${path}/clash/config.yaml
+# ${path}/bin/yq -i ".dns.listen=\"${dns_listen}\"" ${path}/clash/config.yaml
+# ${path}/bin/yq -i ".dns.fake-ip-range=\"${fakeip_range}\"" ${path}/clash/config.yaml
 
-# ${box_path}/bin/yq -o=json -i "(.inbounds[] | select(.type == \"tproxy\") | .listen_port) = ${tproxy_port}" ${box_path}/sing-box/config.json
+# ${path}/bin/yq -o=json -i "(.inbounds[] | select(.type == \"tproxy\") | .listen_port) = ${tproxy_port}" ${path}/sing-box/config.json
 
-find ${box_path} -mtime +3 -type f -name "*.log" | xargs rm -f
+find ${path} -mtime +3 -type f -name "*.log" | xargs rm -f
 
 log() {
   export TZ=Asia/Shanghai
@@ -54,27 +54,27 @@ forward() {
 
 check_permission() {
   if which ${bin_name} | grep -q "/system/bin/" ; then
-    box_user=$(echo ${box_user_group} | awk -F ':' '{print $1}')
-    box_group=$(echo ${box_user_group} | awk -F ':' '{print $2}')
-    box_user_id=$(id -u ${box_user})
-    box_group_id=$(id -g ${box_group})
-    [ ${box_user_id} ] && [ ${box_group_id} ] || \
-    (box_user_group="root:net_admin" && log Error "${box_user_group} error, use root:net_admin instead.")
+    user=$(echo ${user_group} | awk -F ':' '{print $1}')
+    group=$(echo ${user_group} | awk -F ':' '{print $2}')
+    user_id=$(id -u ${user})
+    group_id=$(id -g ${group})
+    [ ${user_id} ] && [ ${group_id} ] || \
+    (user_group="root:net_admin" && log Error "${user_group} error, use root:net_admin instead.")
     bin_path=$(which ${bin_name})
-    chown ${box_user_group} ${bin_path}
+    chown ${user_group} ${bin_path}
     chmod 0700 ${bin_path}
-    if [ "${box_user_id}" != "0" ] || [ "${box_group_id}" != "3005" ] ; then
+    if [ "${user_id}" != "0" ] || [ "${group_id}" != "3005" ] ; then
       # setcap has been deprecated as it does not support binary outside of the /system/bin directory
       setcap 'cap_net_admin,cap_net_raw,cap_net_bind_service+ep' ${bin_path} || \
-      (box_user_group="root:net_admin" && log Error "setcap authorization failed, you may need libcap package.")
+      (user_group="root:net_admin" && log Error "setcap authorization failed, you may need libcap package.")
     fi
-    chown -R ${box_user_group} ${box_path}
+    chown -R ${user_group} ${path}
     return 0
   elif [ -f ${bin_path} ] ; then
-    box_user_group="root:net_admin"
-    chown ${box_user_group} ${bin_path}
+    user_group="root:net_admin"
+    chown ${user_group} ${bin_path}
     chmod 0700 ${bin_path}
-    chown -R ${box_user_group} ${box_path}
+    chown -R ${user_group} ${path}
     return 0
   else
     return 1
@@ -84,43 +84,10 @@ check_permission() {
 start_bin() {
   ulimit -SHn 1000000
   case "${bin_name}" in
-    sing-box)
-      if ${bin_path} check -D ${box_path}/${bin_name} > ${run_path}/check.log 2>&1 ; then
-        log Info "starting ${bin_name} service."
-        nohup busybox setuidgid ${box_user_group} ${bin_path} run -D ${box_path}/${bin_name} > /dev/null 2> ${run_path}/error_${bin_name}.log &
-        echo -n $! > ${pid_file}
-        return 0
-      else
-        log Error "configuration check failed, please check the ${run_path}/check.log file."
-        return 1
-      fi
-      ;;
     clash)
-      if ${bin_path} -t -d ${box_path}/${bin_name} > ${run_path}/check.log 2>&1 ; then
+      if ${bin_path} -t -d ${path}/${bin_name} > ${run_path}/check.log 2>&1 ; then
         log Info "starting ${bin_name} service."
-        nohup busybox setuidgid ${box_user_group} ${bin_path} -d ${box_path}/${bin_name} > ${box_path}/${bin_name}/${bin_name}_$(date +%Y%m%d%H%M).log 2> ${run_path}/error_${bin_name}.log &
-        echo -n $! > ${pid_file}
-        return 0
-      else
-        log Error "configuration check failed, please check the ${run_path}/check.log file."
-        return 1
-      fi
-      ;;
-    xray)
-      if ${bin_path} -test -confdir ${box_path}/${bin_name} > ${run_path}/check.log 2>&1 ; then
-        log Info "starting ${bin_name} service."
-        nohup busybox setuidgid ${box_user_group} ${bin_path} -confdir ${box_path}/${bin_name} > /dev/null 2> ${run_path}/error_${bin_name}.log &
-        echo -n $! > ${pid_file}
-        return 0
-      else
-        log Error "configuration check failed, please check the ${run_path}/check.log file."
-        return 1
-      fi
-      ;;
-    v2ray)
-      if ${bin_path} test -d ${box_path}/${bin_name} > ${run_path}/check.log 2>&1 ; then
-        log Info "starting ${bin_name} service."
-        nohup busybox setuidgid ${box_user_group} ${bin_path} run -d ${box_path}/${bin_name} > /dev/null 2> ${run_path}/error_${bin_name}.log &
+        nohup busybox setuidgid ${user_group} ${bin_path} -d ${path}/${bin_name} > ${path}/${bin_name}/${bin_name}_$(date +%Y%m%d%H%M).log 2> ${run_path}/error_${bin_name}.log &
         echo -n $! > ${pid_file}
         return 0
       else
@@ -129,7 +96,7 @@ start_bin() {
       fi
       ;;
     *)
-      log Error "$1 core error, it must be one of ${bin_name_list[*]}"
+      log Error "$1 core error"
       return 2
       ;;
   esac
@@ -174,7 +141,7 @@ display_bin_status() {
 
 start_service() {
   if check_permission ; then
-    log Info "${bin_name} will be started with the ${box_user_group} user group."
+    log Info "${bin_name} will be started with the ${user_group} user group."
     [ "${proxy_method}" != "TPROXY" ] && create_tun_link
     if start_bin && wait_bin_listen ; then
       log Info "${bin_name} service is running. ( PID: $(cat ${pid_file}) )"
@@ -192,7 +159,7 @@ start_service() {
       fi
     fi
   else
-    log Error "missing ${bin_name} core, please download and place it in the ${box_path}/bin/ directory"
+    log Error "missing ${bin_name} core, please download and place it in the ${path}/bin/ directory"
     return 2
   fi
 }

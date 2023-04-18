@@ -38,55 +38,55 @@ find_packages_uid() {
 
 probe_user_group() {
   if bin_pid=$(busybox pidof ${bin_name}) ; then
-    box_user=$(stat -c %U /proc/${bin_pid})
-    box_group=$(stat -c %G /proc/${bin_pid})
+    user=$(stat -c %U /proc/${bin_pid})
+    group=$(stat -c %G /proc/${bin_pid})
     return 0
   else
-    box_user=$(echo ${box_user_group} | awk -F ':' '{print $1}')
-    box_group=$(echo ${box_user_group} | awk -F ':' '{print $2}')
+    user=$(echo ${user_group} | awk -F ':' '{print $1}')
+    group=$(echo ${user_group} | awk -F ':' '{print $2}')
     return 1
   fi
 }
 
 start_redirect() {
-  ${iptables} -t nat -N BOX_EXTERNAL
-  ${iptables} -t nat -F BOX_EXTERNAL
-  ${iptables} -t nat -N BOX_LOCAL
-  ${iptables} -t nat -F BOX_LOCAL
+  ${iptables} -t nat -N EXTERNAL
+  ${iptables} -t nat -F EXTERNAL
+  ${iptables} -t nat -N LOCAL
+  ${iptables} -t nat -F LOCAL
 
   if [ "${bin_name}" = "clash" ] ; then
-    ${iptables} -t nat -A BOX_EXTERNAL -p udp --dport 53 -j REDIRECT --to-ports ${clash_dns_port}
-    ${iptables} -t nat -A BOX_LOCAL -p udp --dport 53 -j REDIRECT --to-ports ${clash_dns_port}
-    ${iptables} -t nat -A BOX_EXTERNAL -d ${clash_fake_ip_range} -p icmp -j DNAT --to-destination 127.0.0.1
-    ${iptables} -t nat -A BOX_LOCAL -d ${clash_fake_ip_range} -p icmp -j DNAT --to-destination 127.0.0.1
+    ${iptables} -t nat -A EXTERNAL -p udp --dport 53 -j REDIRECT --to-ports ${dns_port}
+    ${iptables} -t nat -A LOCAL -p udp --dport 53 -j REDIRECT --to-ports ${dns_port}
+    ${iptables} -t nat -A EXTERNAL -d ${fakeip_range} -p icmp -j DNAT --to-destination 127.0.0.1
+    ${iptables} -t nat -A LOCAL -d ${fakeip_range} -p icmp -j DNAT --to-destination 127.0.0.1
 #  else
 #    Other types of inbound should be added here to receive DNS traffic instead of sniffing
-#    ${iptables} -t nat -A BOX_EXTERNAL -p udp --dport 53 -j REDIRECT --to-ports ${redir_port}
-#    ${iptables} -t nat -A BOX_LOCAL -p udp --dport 53 -j REDIRECT --to-ports ${redir_port}
+#    ${iptables} -t nat -A EXTERNAL -p udp --dport 53 -j REDIRECT --to-ports ${redir_port}
+#    ${iptables} -t nat -A LOCAL -p udp --dport 53 -j REDIRECT --to-ports ${redir_port}
   fi
 
   for subnet in ${intranet[@]} ; do
-    ${iptables} -t nat -A BOX_EXTERNAL -d ${subnet} -j RETURN
-    ${iptables} -t nat -A BOX_LOCAL -d ${subnet} -j RETURN
+    ${iptables} -t nat -A EXTERNAL -d ${subnet} -j RETURN
+    ${iptables} -t nat -A LOCAL -d ${subnet} -j RETURN
   done
 
-  ${iptables} -t nat -A BOX_EXTERNAL -p tcp -i lo -j REDIRECT --to-ports ${redir_port}
+  ${iptables} -t nat -A EXTERNAL -p tcp -i lo -j REDIRECT --to-ports ${redir_port}
 
   if [ "${ap_list}" != "" ] ; then
     for ap in ${ap_list[@]} ; do
-      ${iptables} -t nat -A BOX_EXTERNAL -p tcp -i ${ap} -j REDIRECT --to-ports ${redir_port}
+      ${iptables} -t nat -A EXTERNAL -p tcp -i ${ap} -j REDIRECT --to-ports ${redir_port}
     done
     log Info "${ap_list[*]} transparent proxy."
   fi
 
-  ${iptables} -t nat -I PREROUTING -j BOX_EXTERNAL
+  ${iptables} -t nat -I PREROUTING -j EXTERNAL
 
 
-  ${iptables} -t nat -I BOX_LOCAL -m owner --uid-owner ${box_user} --gid-owner ${box_group} -j RETURN
+  ${iptables} -t nat -I LOCAL -m owner --uid-owner ${user} --gid-owner ${group} -j RETURN
 
   if [ "${ignore_out_list}" != "" ] ; then
     for ignore in ${ignore_out_list[@]} ; do
-      ${iptables} -t nat -I BOX_LOCAL -o ${ignore} -j RETURN
+      ${iptables} -t nat -I LOCAL -o ${ignore} -j RETURN
     done
     log Info "${ignore_out_list[*]} ignore transparent proxy."
   fi
@@ -94,50 +94,50 @@ start_redirect() {
   if [ "${proxy_mode}" = "blacklist" ] ; then
     if [ "${uid_list}" = "" ] ; then
       # Route Everything
-      ${iptables} -t nat -A BOX_LOCAL -p tcp -j REDIRECT --to-ports ${redir_port}
+      ${iptables} -t nat -A LOCAL -p tcp -j REDIRECT --to-ports ${redir_port}
       log Info "transparent proxy for all apps."
     else
       # Bypass apps
       for appid in ${uid_list[@]} ; do
-        ${iptables} -t nat -I BOX_LOCAL -m owner --uid-owner ${appid} -j RETURN
+        ${iptables} -t nat -I LOCAL -m owner --uid-owner ${appid} -j RETURN
       done
       # Allow !app
-      ${iptables} -t nat -A BOX_LOCAL -p tcp -j REDIRECT --to-ports ${redir_port}
+      ${iptables} -t nat -A LOCAL -p tcp -j REDIRECT --to-ports ${redir_port}
       log Info "proxy mode: ${proxy_mode}, ${user_packages_list[*]} no transparent proxy."
     fi
   elif [ "${proxy_mode}" = "whitelist" ] ; then
     # Route apps to Box
     for appid in ${uid_list[@]} ; do
-      ${iptables} -t nat -A BOX_LOCAL -p tcp -m owner --uid-owner ${appid} -j REDIRECT --to-ports ${redir_port}
+      ${iptables} -t nat -A LOCAL -p tcp -m owner --uid-owner ${appid} -j REDIRECT --to-ports ${redir_port}
     done
-    ${iptables} -t nat -A BOX_LOCAL -p tcp -m owner --uid-owner 0 -j REDIRECT --to-ports ${redir_port}
-    ${iptables} -t nat -A BOX_LOCAL -p tcp -m owner --uid-owner 1052 -j REDIRECT --to-ports ${redir_port}
+    ${iptables} -t nat -A LOCAL -p tcp -m owner --uid-owner 0 -j REDIRECT --to-ports ${redir_port}
+    ${iptables} -t nat -A LOCAL -p tcp -m owner --uid-owner 1052 -j REDIRECT --to-ports ${redir_port}
     log Info "proxy mode: ${proxy_mode}, ${user_packages_list[*]} transparent proxy."
   else
     log Warn "proxy mode: ${proxy_mode} error."
     # Route Everything
-    ${iptables} -t nat -A BOX_LOCAL -p tcp -j REDIRECT --to-ports ${redir_port}
+    ${iptables} -t nat -A LOCAL -p tcp -j REDIRECT --to-ports ${redir_port}
     log Info "transparent proxy for all apps."
   fi
 
-  ${iptables} -t nat -I OUTPUT -j BOX_LOCAL
+  ${iptables} -t nat -I OUTPUT -j LOCAL
 
-  ${iptables} -A OUTPUT -d 127.0.0.1 -p tcp -m owner --uid-owner ${box_user} --gid-owner ${box_group} -m tcp --dport ${redir_port} -j REJECT
+  ${iptables} -A OUTPUT -d 127.0.0.1 -p tcp -m owner --uid-owner ${user} --gid-owner ${group} -m tcp --dport ${redir_port} -j REJECT
 }
 
 stop_redirect() {
-  ${iptables} -t nat -D PREROUTING -j BOX_EXTERNAL
+  ${iptables} -t nat -D PREROUTING -j EXTERNAL
 
-  ${iptables} -t nat -D OUTPUT -j BOX_LOCAL
+  ${iptables} -t nat -D OUTPUT -j LOCAL
 
-  ${iptables} -D OUTPUT -d 127.0.0.1 -p tcp -m owner --uid-owner ${box_user} --gid-owner ${box_group} -m tcp --dport ${redir_port} -j REJECT
+  ${iptables} -D OUTPUT -d 127.0.0.1 -p tcp -m owner --uid-owner ${user} --gid-owner ${group} -m tcp --dport ${redir_port} -j REJECT
   ${iptables} -D OUTPUT -d 127.0.0.1 -p tcp -m owner --uid-owner 0 --gid-owner 3005 -m tcp --dport ${redir_port} -j REJECT
 
 
-  ${iptables} -t nat -F BOX_EXTERNAL
-  ${iptables} -t nat -X BOX_EXTERNAL
-  ${iptables} -t nat -F BOX_LOCAL
-  ${iptables} -t nat -X BOX_LOCAL
+  ${iptables} -t nat -F EXTERNAL
+  ${iptables} -t nat -X EXTERNAL
+  ${iptables} -t nat -F LOCAL
+  ${iptables} -t nat -X LOCAL
 }
 
 start_tproxy() {
@@ -149,150 +149,150 @@ start_tproxy() {
     ip route add local default dev lo table ${id}
   fi
 
-  ${iptables} -t mangle -N BOX_EXTERNAL
-  ${iptables} -t mangle -F BOX_EXTERNAL
+  ${iptables} -t mangle -N EXTERNAL
+  ${iptables} -t mangle -F EXTERNAL
 
   # Bypass box itself
-  # ${iptables} -t mangle -A BOX_EXTERNAL -m mark --mark ${routing_mark} -j RETURN
+  # ${iptables} -t mangle -A EXTERNAL -m mark --mark ${routing_mark} -j RETURN
 
   # Bypass other if
   # Notice: Some interface is named with r_ / oem / nm_ / qcom_
   # It might need more complicated solution.
-  # ${iptables} -t mangle -I BOX_EXTERNAL -i rmnet_data+ -j RETURN
-  # ${iptables} -t mangle -I BOX_EXTERNAL -i ccmni+ -j RETURN
+  # ${iptables} -t mangle -I EXTERNAL -i rmnet_data+ -j RETURN
+  # ${iptables} -t mangle -I EXTERNAL -i ccmni+ -j RETURN
 
   # Bypass intranet
-  # ${iptables} -t mangle -A BOX_EXTERNAL -m addrtype --dst-type LOCAL -j RETURN
+  # ${iptables} -t mangle -A EXTERNAL -m addrtype --dst-type LOCAL -j RETURN
   # Run `su -c 'zcat /proc/config.gz | grep -i addrtype'` to check compatibility
   if [ "${bin_name}" = "clash" ] ; then
     if [ "${iptables}" = "ip6tables -w 100" ] ; then
-      ${iptables} -t mangle -A BOX_EXTERNAL -p udp --dport 53 -j RETURN
+      ${iptables} -t mangle -A EXTERNAL -p udp --dport 53 -j RETURN
       for subnet6 in ${intranet6[@]}; do
-        ${iptables} -t mangle -A BOX_EXTERNAL -d ${subnet6} -j RETURN
+        ${iptables} -t mangle -A EXTERNAL -d ${subnet6} -j RETURN
       done
     else
-      ${iptables} -t mangle -A BOX_EXTERNAL -p udp --dport 53 -j RETURN
+      ${iptables} -t mangle -A EXTERNAL -p udp --dport 53 -j RETURN
       for subnet in ${intranet[@]} ; do
-        ${iptables} -t mangle -A BOX_EXTERNAL -d ${subnet} -j RETURN
+        ${iptables} -t mangle -A EXTERNAL -d ${subnet} -j RETURN
       done
     fi
   else
     if [ "${iptables}" = "ip6tables -w 100" ] ; then
       for subnet6 in ${intranet6[@]} ; do
-        ${iptables} -t mangle -A BOX_EXTERNAL -d ${subnet6} -p udp ! --dport 53 -j RETURN
-        ${iptables} -t mangle -A BOX_EXTERNAL -d ${subnet6} ! -p udp -j RETURN
+        ${iptables} -t mangle -A EXTERNAL -d ${subnet6} -p udp ! --dport 53 -j RETURN
+        ${iptables} -t mangle -A EXTERNAL -d ${subnet6} ! -p udp -j RETURN
       done
     else
       for subnet in ${intranet[@]} ; do
-        ${iptables} -t mangle -A BOX_EXTERNAL -d ${subnet} -p udp ! --dport 53 -j RETURN
-        ${iptables} -t mangle -A BOX_EXTERNAL -d ${subnet} ! -p udp -j RETURN
+        ${iptables} -t mangle -A EXTERNAL -d ${subnet} -p udp ! --dport 53 -j RETURN
+        ${iptables} -t mangle -A EXTERNAL -d ${subnet} ! -p udp -j RETURN
       done
     fi
   fi
 
-  ${iptables} -t mangle -A BOX_EXTERNAL -p tcp -i lo -j TPROXY --on-port ${tproxy_port} --tproxy-mark ${id}
-  ${iptables} -t mangle -A BOX_EXTERNAL -p udp -i lo -j TPROXY --on-port ${tproxy_port} --tproxy-mark ${id}
+  ${iptables} -t mangle -A EXTERNAL -p tcp -i lo -j TPROXY --on-port ${tproxy_port} --tproxy-mark ${id}
+  ${iptables} -t mangle -A EXTERNAL -p udp -i lo -j TPROXY --on-port ${tproxy_port} --tproxy-mark ${id}
 
   # Allow ap interface
   # Notice: Old android device may only have one wlan interface.
   # Some new android device have multiple wlan interface like wlan0(for internet), wlan1(for AP).
   if [ "${ap_list}" != "" ] ; then
     for ap in ${ap_list[@]} ; do
-      ${iptables} -t mangle -A BOX_EXTERNAL -p tcp -i ${ap} -j TPROXY --on-port ${tproxy_port} --tproxy-mark ${id}
-      ${iptables} -t mangle -A BOX_EXTERNAL -p udp -i ${ap} -j TPROXY --on-port ${tproxy_port} --tproxy-mark ${id}
+      ${iptables} -t mangle -A EXTERNAL -p tcp -i ${ap} -j TPROXY --on-port ${tproxy_port} --tproxy-mark ${id}
+      ${iptables} -t mangle -A EXTERNAL -p udp -i ${ap} -j TPROXY --on-port ${tproxy_port} --tproxy-mark ${id}
     done
     log Info "${ap_list[*]} transparent proxy."
   fi
 
-  ${iptables} -t mangle -I PREROUTING -j BOX_EXTERNAL
+  ${iptables} -t mangle -I PREROUTING -j EXTERNAL
 
 
-  ${iptables} -t mangle -N BOX_LOCAL
-  ${iptables} -t mangle -F BOX_LOCAL
+  ${iptables} -t mangle -N LOCAL
+  ${iptables} -t mangle -F LOCAL
 
   # Bypass ignored interfaces
   if [ "${ignore_out_list}" != "" ] ; then
     for ignore in ${ignore_out_list[@]} ; do
-      ${iptables} -t mangle -I BOX_LOCAL -o ${ignore} -j RETURN
+      ${iptables} -t mangle -I LOCAL -o ${ignore} -j RETURN
     done
     log Info "${ignore_out_list[*]} ignore transparent proxy."
   fi
 
   # Bypass intranet
-  # ${iptables} -t mangle -A BOX_LOCAL -m addrtype --dst-type LOCAL -j RETURN
+  # ${iptables} -t mangle -A LOCAL -m addrtype --dst-type LOCAL -j RETURN
   if [ "${bin_name}" = "clash" ] ; then
     if [ "${iptables}" = "ip6tables -w 100" ] ; then
-      ${iptables} -t mangle -A BOX_LOCAL -p udp --dport 53 -j RETURN
+      ${iptables} -t mangle -A LOCAL -p udp --dport 53 -j RETURN
       for subnet6 in ${intranet6[@]} ; do
-        ${iptables} -t mangle -A BOX_LOCAL -d ${subnet6} -j RETURN
+        ${iptables} -t mangle -A LOCAL -d ${subnet6} -j RETURN
       done
     else
-      ${iptables} -t mangle -A BOX_LOCAL -p udp --dport 53 -j RETURN
+      ${iptables} -t mangle -A LOCAL -p udp --dport 53 -j RETURN
       for subnet in ${intranet[@]} ; do
-        ${iptables} -t mangle -A BOX_LOCAL -d ${subnet} -j RETURN
+        ${iptables} -t mangle -A LOCAL -d ${subnet} -j RETURN
       done
     fi
   else
     if [ "${iptables}" = "ip6tables -w 100" ] ; then
       for subnet6 in ${intranet6[@]} ; do
-        ${iptables} -t mangle -A BOX_LOCAL -d ${subnet6} -p udp ! --dport 53 -j RETURN
-        ${iptables} -t mangle -A BOX_LOCAL -d ${subnet6} ! -p udp -j RETURN
+        ${iptables} -t mangle -A LOCAL -d ${subnet6} -p udp ! --dport 53 -j RETURN
+        ${iptables} -t mangle -A LOCAL -d ${subnet6} ! -p udp -j RETURN
       done
     else
       for subnet in ${intranet[@]} ; do
-        ${iptables} -t mangle -A BOX_LOCAL -d ${subnet} -p udp ! --dport 53 -j RETURN
-        ${iptables} -t mangle -A BOX_LOCAL -d ${subnet} ! -p udp -j RETURN
+        ${iptables} -t mangle -A LOCAL -d ${subnet} -p udp ! --dport 53 -j RETURN
+        ${iptables} -t mangle -A LOCAL -d ${subnet} ! -p udp -j RETURN
       done
     fi
   fi
 
   # Bypass box itself
-  ${iptables} -t mangle -I BOX_LOCAL -m owner --uid-owner ${box_user} --gid-owner ${box_group} -j RETURN
+  ${iptables} -t mangle -I LOCAL -m owner --uid-owner ${user} --gid-owner ${group} -j RETURN
 
-  # ${iptables} -t mangle -I BOX_LOCAL -m mark --mark ${routing_mark} -j RETURN
+  # ${iptables} -t mangle -I LOCAL -m mark --mark ${routing_mark} -j RETURN
 
   # Disable kernel
-  # ${iptables} -t mangle -A BOX_LOCAL -m owner ! --uid 0-99999999 -j DROP
+  # ${iptables} -t mangle -A LOCAL -m owner ! --uid 0-99999999 -j DROP
 
   if [ "${proxy_mode}" = "blacklist" ] ; then
     if [ "${uid_list}" = "" ] ; then
       # Route Everything
-      ${iptables} -t mangle -A BOX_LOCAL -p tcp -j MARK --set-mark ${id}
-      ${iptables} -t mangle -A BOX_LOCAL -p udp -j MARK --set-mark ${id}
+      ${iptables} -t mangle -A LOCAL -p tcp -j MARK --set-mark ${id}
+      ${iptables} -t mangle -A LOCAL -p udp -j MARK --set-mark ${id}
       log Info "transparent proxy for all apps."
     else
       # Bypass apps
       for appid in ${uid_list[@]} ; do
-        ${iptables} -t mangle -I BOX_LOCAL -m owner --uid-owner ${appid} -j RETURN
+        ${iptables} -t mangle -I LOCAL -m owner --uid-owner ${appid} -j RETURN
       done
       # Allow !app
-      ${iptables} -t mangle -A BOX_LOCAL -p tcp -j MARK --set-mark ${id}
-      ${iptables} -t mangle -A BOX_LOCAL -p udp -j MARK --set-mark ${id}
+      ${iptables} -t mangle -A LOCAL -p tcp -j MARK --set-mark ${id}
+      ${iptables} -t mangle -A LOCAL -p udp -j MARK --set-mark ${id}
       log Info "proxy mode: ${proxy_mode}, ${user_packages_list[*]} no transparent proxy."
     fi
   elif [ "${proxy_mode}" = "whitelist" ] ; then
     # Route apps to Box
     for appid in ${uid_list[@]} ; do
-      ${iptables} -t mangle -A BOX_LOCAL -p tcp -m owner --uid-owner ${appid} -j MARK --set-mark ${id}
-      ${iptables} -t mangle -A BOX_LOCAL -p udp -m owner --uid-owner ${appid} -j MARK --set-mark ${id}
+      ${iptables} -t mangle -A LOCAL -p tcp -m owner --uid-owner ${appid} -j MARK --set-mark ${id}
+      ${iptables} -t mangle -A LOCAL -p udp -m owner --uid-owner ${appid} -j MARK --set-mark ${id}
     done
-    ${iptables} -t mangle -A BOX_LOCAL -p tcp -m owner --uid-owner 0 -j MARK --set-mark ${id}
-    ${iptables} -t mangle -A BOX_LOCAL -p udp -m owner --uid-owner 0 -j MARK --set-mark ${id}
+    ${iptables} -t mangle -A LOCAL -p tcp -m owner --uid-owner 0 -j MARK --set-mark ${id}
+    ${iptables} -t mangle -A LOCAL -p udp -m owner --uid-owner 0 -j MARK --set-mark ${id}
     # Route dnsmasq to Box
-    ${iptables} -t mangle -A BOX_LOCAL -p tcp -m owner --uid-owner 1052 -j MARK --set-mark ${id}
-    ${iptables} -t mangle -A BOX_LOCAL -p udp -m owner --uid-owner 1052 -j MARK --set-mark ${id}
+    ${iptables} -t mangle -A LOCAL -p tcp -m owner --uid-owner 1052 -j MARK --set-mark ${id}
+    ${iptables} -t mangle -A LOCAL -p udp -m owner --uid-owner 1052 -j MARK --set-mark ${id}
     # Route DNS request to Box
-    [ "${bin_name}" != "clash" ] && ${iptables} -t mangle -A BOX_LOCAL -p udp --dport 53 -j MARK --set-mark ${id}
+    [ "${bin_name}" != "clash" ] && ${iptables} -t mangle -A LOCAL -p udp --dport 53 -j MARK --set-mark ${id}
     log Info "proxy mode: ${proxy_mode}, ${user_packages_list[*]} transparent proxy."
   else
     log Warn "proxy mode: ${proxy_mode} error."
     # Route Everything
-    ${iptables} -t mangle -A BOX_LOCAL -p tcp -j MARK --set-mark ${id}
-    ${iptables} -t mangle -A BOX_LOCAL -p udp -j MARK --set-mark ${id}
+    ${iptables} -t mangle -A LOCAL -p tcp -j MARK --set-mark ${id}
+    ${iptables} -t mangle -A LOCAL -p udp -j MARK --set-mark ${id}
     log Info "transparent proxy for all apps."
   fi
 
-  ${iptables} -t mangle -I OUTPUT -j BOX_LOCAL
+  ${iptables} -t mangle -I OUTPUT -j LOCAL
 
 
   ${iptables} -t mangle -N DIVERT
@@ -306,9 +306,9 @@ start_tproxy() {
 
   # This rule blocks local access to tproxy-port to prevent traffic loopback.
   if [ "${iptables}" = "ip6tables -w 100" ] ; then
-    ${iptables} -A OUTPUT -d ::1 -p tcp -m owner --uid-owner ${box_user} --gid-owner ${box_group} -m tcp --dport ${tproxy_port} -j REJECT
+    ${iptables} -A OUTPUT -d ::1 -p tcp -m owner --uid-owner ${user} --gid-owner ${group} -m tcp --dport ${tproxy_port} -j REJECT
   else
-    ${iptables} -A OUTPUT -d 127.0.0.1 -p tcp -m owner --uid-owner ${box_user} --gid-owner ${box_group} -m tcp --dport ${tproxy_port} -j REJECT
+    ${iptables} -A OUTPUT -d 127.0.0.1 -p tcp -m owner --uid-owner ${user} --gid-owner ${group} -m tcp --dport ${tproxy_port} -j REJECT
   fi
 
 
@@ -317,7 +317,7 @@ start_tproxy() {
     ${iptables} -t nat -N CLASH_DNS_EXTERNAL
     ${iptables} -t nat -F CLASH_DNS_EXTERNAL
 
-    ${iptables} -t nat -A CLASH_DNS_EXTERNAL -p udp --dport 53 -j REDIRECT --to-ports ${clash_dns_port}
+    ${iptables} -t nat -A CLASH_DNS_EXTERNAL -p udp --dport 53 -j REDIRECT --to-ports ${dns_port}
 
     ${iptables} -t nat -I PREROUTING -j CLASH_DNS_EXTERNAL
 
@@ -325,16 +325,16 @@ start_tproxy() {
     ${iptables} -t nat -N CLASH_DNS_LOCAL
     ${iptables} -t nat -F CLASH_DNS_LOCAL
 
-    ${iptables} -t nat -A CLASH_DNS_LOCAL -m owner --uid-owner ${box_user} --gid-owner ${box_group} -j RETURN
+    ${iptables} -t nat -A CLASH_DNS_LOCAL -m owner --uid-owner ${user} --gid-owner ${group} -j RETURN
 
-    ${iptables} -t nat -A CLASH_DNS_LOCAL -p udp --dport 53 -j REDIRECT --to-ports ${clash_dns_port}
+    ${iptables} -t nat -A CLASH_DNS_LOCAL -p udp --dport 53 -j REDIRECT --to-ports ${dns_port}
 
     ${iptables} -t nat -I OUTPUT -j CLASH_DNS_LOCAL
 
     # Fix ICMP (ping), this does not guarantee that the ping result is valid (proxies such as clash do not support forwarding ICMP), 
     # just that it returns a result, "--to-destination" can be set to a reachable address.
-    ${iptables} -t nat -I OUTPUT -d ${clash_fake_ip_range} -p icmp -j DNAT --to-destination 127.0.0.1
-    ${iptables} -t nat -I PREROUTING -d ${clash_fake_ip_range} -p icmp -j DNAT --to-destination 127.0.0.1
+    ${iptables} -t nat -I OUTPUT -d ${fakeip_range} -p icmp -j DNAT --to-destination 127.0.0.1
+    ${iptables} -t nat -I PREROUTING -d ${fakeip_range} -p icmp -j DNAT --to-destination 127.0.0.1
   fi
 }
 
@@ -347,26 +347,26 @@ stop_tproxy() {
     ip route flush table ${id}
   fi
 
-  ${iptables} -t mangle -D PREROUTING -j BOX_EXTERNAL
+  ${iptables} -t mangle -D PREROUTING -j EXTERNAL
     
   ${iptables} -t mangle -D PREROUTING -p tcp -m socket -j DIVERT
 
-  ${iptables} -t mangle -D OUTPUT -j BOX_LOCAL
+  ${iptables} -t mangle -D OUTPUT -j LOCAL
 
-  ${iptables} -t mangle -F BOX_EXTERNAL
-  ${iptables} -t mangle -X BOX_EXTERNAL
+  ${iptables} -t mangle -F EXTERNAL
+  ${iptables} -t mangle -X EXTERNAL
 
-  ${iptables} -t mangle -F BOX_LOCAL
-  ${iptables} -t mangle -X BOX_LOCAL
+  ${iptables} -t mangle -F LOCAL
+  ${iptables} -t mangle -X LOCAL
 
   ${iptables} -t mangle -F DIVERT
   ${iptables} -t mangle -X DIVERT
 
   if [ "${iptables}" = "ip6tables -w 100" ] ; then
-    ${iptables} -D OUTPUT -d ::1 -p tcp -m owner --uid-owner ${box_user} --gid-owner ${box_group} -m tcp --dport ${tproxy_port} -j REJECT
+    ${iptables} -D OUTPUT -d ::1 -p tcp -m owner --uid-owner ${user} --gid-owner ${group} -m tcp --dport ${tproxy_port} -j REJECT
     ${iptables} -D OUTPUT -d ::1 -p tcp -m owner --uid-owner 0 --gid-owner 3005 -m tcp --dport ${tproxy_port} -j REJECT
   else
-    ${iptables} -D OUTPUT -d 127.0.0.1 -p tcp -m owner --uid-owner ${box_user} --gid-owner ${box_group} -m tcp --dport ${tproxy_port} -j REJECT
+    ${iptables} -D OUTPUT -d 127.0.0.1 -p tcp -m owner --uid-owner ${user} --gid-owner ${group} -m tcp --dport ${tproxy_port} -j REJECT
     ${iptables} -D OUTPUT -d 127.0.0.1 -p tcp -m owner --uid-owner 0 --gid-owner 3005 -m tcp --dport ${tproxy_port} -j REJECT
   fi
 
@@ -383,8 +383,8 @@ stop_tproxy() {
   ${iptables} -t nat -F CLASH_DNS_LOCAL
   ${iptables} -t nat -X CLASH_DNS_LOCAL
 
-  ${iptables} -t nat -D OUTPUT -d ${clash_fake_ip_range} -p icmp -j DNAT --to-destination 127.0.0.1
-  ${iptables} -t nat -D PREROUTING -d ${clash_fake_ip_range} -p icmp -j DNAT --to-destination 127.0.0.1
+  ${iptables} -t nat -D OUTPUT -d ${fakeip_range} -p icmp -j DNAT --to-destination 127.0.0.1
+  ${iptables} -t nat -D PREROUTING -d ${fakeip_range} -p icmp -j DNAT --to-destination 127.0.0.1
 }
 
 disable_ipv6() {

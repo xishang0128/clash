@@ -5,8 +5,7 @@ adgh=true
 
 
 bin_name="clash"
-bin_name_list=("sing-box" "clash" "xray" "v2ray")
-path=$(cd ../ ; pwd)
+path=$(cd $(dirname `realpath $0`); cd ../; pwd)
 bin_path="${path}/bin/${bin_name}"
 run_path="${path}/run"
 pid_file="${run_path}/${bin_name}.pid"
@@ -14,11 +13,12 @@ pid_file="${run_path}/${bin_name}.pid"
 redir_port="$(cat ${path}/clash/config.yaml | grep "redir-port" | awk -F ':' '{print $2}')"
 tproxy_port="$(cat ${path}/clash/config.yaml | grep "tproxy-port" | awk -F ':' '{print $2}')"
 
-clash_dns_listen="0.0.0.0:1053"
-clash_fake_ip_range="28.0.0.1/8"
+dns_port="1053"
+dns_listen="0.0.0.0:${dns_port}"
+fakeip_range="28.0.0.1/8"
 tun_device="tun0"
 
-box_user_group="root:net_admin"
+user_group="root:net_admin"
 
 
 intranet=(0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 127.0.0.0/8 169.254.0.0/16 192.0.0.0/24 192.0.2.0/24 192.88.99.0/24 192.168.0.0/16 198.51.100.0/24 203.0.113.0/24 224.0.0.0/4 240.0.0.0/4 255.255.255.255/32)

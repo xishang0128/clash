@@ -25,7 +25,7 @@ wait_until_login
 rm ${pid_file}
 mkdir -p ${run_path}
 
-if [ ! -f ${box_path}/manual ] && [ ! -f ${module_dir}/disable ] ; then
+if [ ! -f ${path}/manual ] && [ ! -f ${module_dir}/disable ] ; then
   mv ${run_path}/run.log ${run_path}/run.log.bak
   mv ${run_path}/run_error.log ${run_path}/run_error.log.bak
 
