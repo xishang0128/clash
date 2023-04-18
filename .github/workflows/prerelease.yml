@@ -15,7 +15,10 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Run build.sh
-        run: zip -r -o -X -ll clash.zip ./ -x '.git/*' -x 'build.sh' -x '.github/*' -x 'box4.json'
+        run: |
+          wget -O ./clash/clash/geoip.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat
+          wget -O ./clash/clash/geosite.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite-lite.dat
+          zip -r -o -X -ll clash.zip ./ -x '.git/*' -x 'readme.md' -x '.github/*'
 
       - name: Delete current prerelease assets
         uses: andreaswilli/delete-release-assets-action@v2.0.0
