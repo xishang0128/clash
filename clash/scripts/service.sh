@@ -4,7 +4,7 @@ export PATH="/data/adb/magisk:/data/adb/ksu/bin:$PATH:/data/data/com.termux/file
 
 scripts_dir=$(dirname `realpath $0`)
 
-source ${scripts_dir}/box.config
+source ${scripts_dir}/config
 
 mkdir -p ${run_path}
 mkdir -p ${box_path}/${bin_name}

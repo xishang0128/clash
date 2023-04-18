@@ -14,7 +14,6 @@ clash(){
 	if [ -z "$num" ];then
 		errornum
 		exit;
-		
 	elif [ "$num" = 0 ]; then
 		exit;
 		
@@ -26,11 +25,11 @@ clash(){
 		exit;
 	fi
 }
+
 errornum(){
 	echo -----------------------------------------------
 	echo -e "\033[31m请输入正确的数字！\033[0m"
 }
-
 
 status(){
 	echo -e test

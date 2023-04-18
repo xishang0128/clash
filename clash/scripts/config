@@ -14,9 +14,9 @@ pid_file="${run_path}/${bin_name}.pid"
 redir_port="$(cat ${path}/clash/config.yaml | grep "redir-port" | awk -F ':' '{print $2}')"
 tproxy_port="$(cat ${path}/clash/config.yaml | grep "tproxy-port" | awk -F ':' '{print $2}')"
 
-clash_dns_listen="0.0.0.0:${clash_dns_port}"
+clash_dns_listen="0.0.0.0:1053"
 clash_fake_ip_range="28.0.0.1/8"
-tun_device="tun0" 
+tun_device="tun0"
 
 box_user_group="root:net_admin"
 
