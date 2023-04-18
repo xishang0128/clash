@@ -1,13 +1,15 @@
 #!/bin/sh
 
 path=$(cd ../ ; pwd)
+scripts_dir=$(dirname `realpath $0`)
+source ${scripts_dir}/config
 
 gettun(){
 if [ -z "$tunhead" ]; then
-tunhead=`grep tun: -n $path/clash/config.yaml | awk -F ':' '{print $1}'`
+tunhead=`grep tun: -n $path/clash/config1.yaml | awk -F ':' '{print $1}'`
 tuntail=$(expr "$tunhead" + 1)
 fi
-tun=$(cat $path/clash/config.yaml | tail -n +"$tuntail" | head -n "1" | grep "  ")
+tun=$(cat $path/clash/config1.yaml | tail -n +"$tuntail" | head -n "1" | grep "  ")
 if [ -n "$tun" ]; then
   tuntail=$(expr "$tuntail" + 1)
   gettun
@@ -18,10 +20,10 @@ fi
 
 getdns(){
 if [ -z "$dnshead" ]; then
-dnshead=`grep dns: -n $path/clash/config.yaml | awk -F ':' '{print $1}'`
+dnshead=`grep dns: -n $path/clash/config1.yaml | awk -F ':' '{print $1}'`
 dnstail=$(expr "$dnshead" + 1)
 fi
-dns=$(cat $path/clash/config.yaml | tail -n +"$dnstail" | head -n "1" | grep "  ")
+dns=$(cat $path/clash/config1.yaml | tail -n +"$dnstail" | head -n "1" | grep "  ")
 if [ -n "$dns" ]; then
   dnstail=$(expr "$dnstail" + 1)
   getdns
@@ -32,10 +34,10 @@ fi
 
 getsniff(){
 if [ -z "$sniffhead" ]; then
-sniffhead=`grep sniffer: -n $path/clash/config.yaml | awk -F ':' '{print $1}'`
+sniffhead=`grep sniffer: -n $path/clash/config1.yaml | awk -F ':' '{print $1}'`
 snifftail=$(expr "$sniffhead" + 1)
 fi
-sniff=$(cat $path/clash/config.yaml | tail -n +"$snifftail" | head -n "1" | grep "  ")
+sniff=$(cat $path/clash/config1.yaml | tail -n +"$snifftail" | head -n "1" | grep "  ")
 if [ -n "$sniff" ]; then
   snifftail=$(expr "$snifftail" + 1)
   getsniff
@@ -44,12 +46,29 @@ else
 fi
 }
 
+dns(){
+if [ "$mosdns" == "true" ]; then
+echo 1
+else
+echo 0
+fi
+}
 
 gettun
 getdns
 getsniff
 
+dnsenable=$(cat $path/clash/config1.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "enable" | awk -F ':' '{print $2}')
+echo dns:$dnsenable
+tunenable=$(cat $path/clash/config1.yaml | head -n "$tuntail" | tail -n +"$tunhead" | grep "enable" | awk -F ':' '{print $2}')
+echo tun:$tunenable
+sniffenable=$(cat $path/clash/config1.yaml | head -n "$snifftail" | tail -n +"$sniffhead" | grep "enable" | awk -F ':' '{print $2}')
+echo sniffer:$sniffenable
 
+
+echo $tproxy_port
+
+# dns
 
 
 echo TUN 开头"$tunhead"行 结尾"$tuntail"行

@@ -171,6 +171,7 @@ display_bin_status() {
     return 1
   fi
 }
+
 start_service() {
   if check_permission ; then
     log Info "${bin_name} will be started with the ${box_user_group} user group."
@@ -195,6 +196,7 @@ start_service() {
     return 2
   fi
 }
+
 stop_service() {
   if display_bin_status ; then
     log Warn "stopping ${bin_name} service."
@@ -205,6 +207,7 @@ stop_service() {
   fi
   rm -f ${pid_file} >> /dev/null 2>&1
 }
+
 case "$1" in
   start)
     display_bin_status || start_service
