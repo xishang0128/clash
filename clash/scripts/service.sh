@@ -104,14 +104,20 @@ start_bin() {
 
 start_adgh() {
   ulimit -SHn 1000000
-    if ${bin_path}  --check-config -w ${path}/dns > ${run_path}/check.log 2>&1 ; then
-      log Info "starting adg home service."
-      nohup busybox setuidgid ${user_group} ${path}/dns/adgh -d ${path}/dns --pidfile ${path}/dns/.adgh.pid &
+  if [ -f ${path}/dns/AdGuardHome.yaml ]
+    if ${path}/bin/adgh--check-config -w ${path}/dns > ${run_path}/check.log 2>&1 ; then
+      log Info "starting adghome service."
+      nohup busybox setuidgid ${user_group} ${path}/bin/adgh -d ${path}/dns --pidfile ${path}/dns/.adgh.pid > /dev/null &
       return 0
     else
       log Error "configuration check failed, please check the ${run_path}/check.log file."
       return 1
     fi
+  else
+    log Info "starting adghome service."
+    nohup busybox setuidgid ${user_group} ${path}/bin/adgh -d ${path}/dns --pidfile ${path}/dns/.adgh.pid > /dev/null &
+    return 0
+  fi
 }
 
 find_netstat_path() {

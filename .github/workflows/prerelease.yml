@@ -20,7 +20,7 @@ jobs:
           wget -O ./clash/clash/geosite.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite-lite.dat
           chmod +x installcore.sh && ./installcore.sh
           wget -O adgh.tar.gz https://github.com/AdguardTeam/AdGuardHome/releases/download/v0.107.29/AdGuardHome_linux_arm64.tar.gz
-          tar -zxvf adgh.tar.gz && mv ./AdGuardHome/AdGuardHome ./clash/dns/adgh && rm -r ./AdGuardHome
+          tar -zxvf adgh.tar.gz && mv ./AdGuardHome/AdGuardHome ./clash/bin/adgh && rm -r ./AdGuardHome ./adgh.tar.gz
           zip -r -o -X -ll clash.zip ./ -x '.git/*' -x 'README.md' -x '.github/*' -x 'installcore.sh'
 
       - name: Delete current prerelease assets

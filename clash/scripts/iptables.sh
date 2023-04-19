@@ -414,7 +414,6 @@ clashdns(){
   getdns
   dns_listen=$(cat ${path}/clash/config.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "listen:" | awk -F ': ' '{print $2}')
   dns_port=$(echo ${dns_listen} | awk -F ':' '{print $2}')
-  fakeip_range=$(cat ${path}/clash/config.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "fake-ip-range:" | awk -F ': ' '{print $2}')
 }
 mos(){
 if [ -z "$moshead" ]; then
@@ -470,8 +469,10 @@ else
   clashdns
 fi
 
+getdns
 redir_port="$(cat ${path}/clash/config.yaml | grep "redir-port" | awk -F ':' '{print $2}')"
 tproxy_port="$(cat ${path}/clash/config.yaml | grep "tproxy-port" | awk -F ':' '{print $2}')"
+fakeip_range=$(cat ${path}/clash/config.yaml | head -n "$dnstail" | tail -n +"$dnshead" | grep "fake-ip-range:" | awk -F ': ' '{print $2}')
 
 if [ "${proxy_mode}" = "core" ] ; then
   iptables="iptables -w 100" && stop_tproxy >> /dev/null 2>&1
