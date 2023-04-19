@@ -458,14 +458,14 @@ if [ "$adgh" = "true" ]; then
   else
     clashdns
   fi
-elif [ "$mosdns" = "true" ]; then
-  echo mos
-  if [ -f ${path}/dns/mosdns.yaml ]; then
-    mos
-    mosudp
-  else
-    clashdns
-  fi
+#elif [ "$mosdns" = "true" ]; then
+#  echo mos
+#  if [ -f ${path}/dns/mosdns.yaml ]; then
+#    mos
+#    mosudp
+#  else
+#    clashdns
+#  fi
 else
   clashdns
 fi

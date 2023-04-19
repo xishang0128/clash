@@ -102,6 +102,18 @@ start_bin() {
   esac
 }
 
+start_adgh() {
+  ulimit -SHn 1000000
+    if ${bin_path}  --check-config -w ${path}/dns > ${run_path}/check.log 2>&1 ; then
+      log Info "starting adg home service."
+      nohup busybox setuidgid ${user_group} ${path}/dns/adgh -d ${path}/dns --pidfile ${path}/dns/.adgh.pid &
+      return 0
+    else
+      log Error "configuration check failed, please check the ${run_path}/check.log file."
+      return 1
+    fi
+}
+
 find_netstat_path() {
   [ -f /system/bin/netstat ] && alias netstat="/system/bin/netstat" && return 0
   [ -f /system/xbin/netstat ] && alias netstat="/system/xbin/netstat" && return 0
@@ -118,6 +130,22 @@ wait_bin_listen() {
     sleep 1 ; wait_count=$((${wait_count} + 1))
   done
   if [ ${bin_pid} ] && eval "${check_bin_cmd}" ; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+wait_adgh_listen() {
+  wait_count=0
+  adgh_pid=$(busybox pidof adgh)
+  find_netstat_path && \
+  check_adgh_cmd="netstat -tnulp | grep -q adgh" || \
+  check_adgh_cmd="ls -lh /proc/${adgh_pid}/fd | grep -q socket"
+  while [ ${adgh_pid} ] && ! eval "${check_adgh_cmd}" && [ ${wait_count} -lt 100 ] ; do
+    sleep 1 ; wait_count=$((${wait_count} + 1))
+  done
+  if [ ${adgh_pid} ] && eval "${check_adgh_cmd}" ; then
     return 0
   else
     return 1
@@ -158,6 +186,11 @@ start_service() {
         return 1
       fi
     fi
+    if [ "$adgh" = "true" ]; then
+      if start_adgh && wait_adgh_listen ; then
+        log Info "adg home service is running. ( PID: $(cat ${path}/dns/.adgh.pid) )"
+      fi
+    fi
   else
     log Error "missing ${bin_name} core, please download and place it in the ${path}/bin/ directory"
     return 2
@@ -171,6 +204,9 @@ stop_service() {
     forward -D >> /dev/null 2>&1
     sleep 1
     display_bin_status
+    if [ "$adgh" = "true" ]; then
+      kill $(cat  ${path}/dns/.adgh.pid) || killall adgh
+    fi
   fi
   rm -f ${pid_file} >> /dev/null 2>&1
 }
