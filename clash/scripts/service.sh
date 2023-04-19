@@ -107,7 +107,7 @@ start_adgh() {
   if [ -f ${path}/dns/AdGuardHome.yaml ]; then
     if ${path}/bin/adgh--check-config -w ${path}/dns > ${run_path}/check.log 2>&1 ; then
       log Info "starting adghome service."
-      nohup busybox setuidgid ${user_group} ${path}/bin/adgh -d ${path}/dns --pidfile ${path}/dns/.adgh.pid > /dev/null &
+      nohup busybox setuidgid ${user_group} ${path}/bin/adgh -w ${path}/dns --pidfile ${path}/dns/.adgh.pid > /dev/null &
       return 0
     else
       log Error "configuration check failed, please check the ${run_path}/check.log file."
@@ -115,7 +115,7 @@ start_adgh() {
     fi
   else
     log Info "starting adghome service."
-    nohup busybox setuidgid ${user_group} ${path}/bin/adgh -d ${path}/dns --pidfile ${path}/dns/.adgh.pid > /dev/null &
+    nohup busybox setuidgid ${user_group} ${path}/bin/adgh -w ${path}/dns --pidfile ${path}/dns/.adgh.pid > /dev/null &
     return 0
   fi
 }
