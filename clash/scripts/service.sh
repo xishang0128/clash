@@ -104,7 +104,7 @@ start_bin() {
 
 start_adgh() {
   ulimit -SHn 1000000
-  if [ -f ${path}/dns/AdGuardHome.yaml ]
+  if [ -f ${path}/dns/AdGuardHome.yaml ]; then
     if ${path}/bin/adgh--check-config -w ${path}/dns > ${run_path}/check.log 2>&1 ; then
       log Info "starting adghome service."
       nohup busybox setuidgid ${user_group} ${path}/bin/adgh -d ${path}/dns --pidfile ${path}/dns/.adgh.pid > /dev/null &
@@ -180,6 +180,11 @@ start_service() {
     if start_bin && wait_bin_listen ; then
       log Info "${bin_name} service is running. ( PID: $(cat ${pid_file}) )"
       probe_tun_device && forward -I
+      if [ "$adgh" = "true" ]; then
+        if start_adgh && wait_adgh_listen ; then
+          log Info "adg home service is running. ( PID: $(cat ${path}/dns/.adgh.pid) )"
+        fi
+      fi
       return 0
     else
       if bin_pid=$(pidof ${bin_name}) ; then
@@ -190,11 +195,6 @@ start_service() {
         log Error "start ${bin_name} service failed, please check the ${run_path}/error_${bin_name}.log file."
         rm -f ${pid_file} >> /dev/null 2>&1
         return 1
-      fi
-    fi
-    if [ "$adgh" = "true" ]; then
-      if start_adgh && wait_adgh_listen ; then
-        log Info "adg home service is running. ( PID: $(cat ${path}/dns/.adgh.pid) )"
       fi
     fi
   else
