@@ -17,7 +17,7 @@ jobs:
       - name: Run build.sh
         run: |
           wget -O ./clash/clash/geoip.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat
-          wget -O ./clash/clash/geosite.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite-lite.dat
+          wget -O ./clash/clash/geosite.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat
           chmod +x installcore.sh && ./installcore.sh
           wget -O adgh.tar.gz https://github.com/AdguardTeam/AdGuardHome/releases/download/v0.107.29/AdGuardHome_linux_arm64.tar.gz
           tar -zxvf adgh.tar.gz && mv ./AdGuardHome/AdGuardHome ./clash/bin/adgh && rm -r ./AdGuardHome ./adgh.tar.gz

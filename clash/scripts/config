@@ -3,7 +3,9 @@
 
 adgh=true
 mosdns=true
-
+dns_hijack=auto
+# mosdns / adgh / clash / auto
+# mosdns只认第一个udp服务器监听,auto会看开关状态来选,adgh>mosdns>clash
 ipv6="disable"
 
 proxy_method="TPROXY"

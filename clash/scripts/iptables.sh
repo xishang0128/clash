@@ -446,7 +446,29 @@ else
 fi
 }
 
-if [ "$adgh" = "true" ]; then
+if ["$dns_hijack" = "auto"]; then
+  if [ "$adgh" = "true" ]; then
+    if [ -f ${path}/dns/AdGuardHome.yaml ]; then
+      dns_port=$(cat ${path}/dns/AdGuardHome.yaml | grep "  port:" | awk -F ': ' '{print $2}')
+    elif [ "$mosdns" = "true" ]; then
+      if [ -f ${path}/dns/mosdns.yaml ]; then
+        mos
+        mosudp
+      fi
+    else
+      clashdns
+    fi
+  elif [ "$mosdns" = "true" ]; then
+    if [ -f ${path}/dns/mosdns.yaml ]; then
+      mos
+      mosudp
+    else
+      clashdns
+    fi
+  else
+    clashdns
+  fi
+elif [ "$dns_hijack" = "adgh" ]; then
   if [ -f ${path}/dns/AdGuardHome.yaml ]; then
     dns_port=$(cat ${path}/dns/AdGuardHome.yaml | grep "  port:" | awk -F ': ' '{print $2}')
   elif [ "$mosdns" = "true" ]; then
@@ -457,14 +479,13 @@ if [ "$adgh" = "true" ]; then
   else
     clashdns
   fi
-#elif [ "$mosdns" = "true" ]; then
-#  echo mos
-#  if [ -f ${path}/dns/mosdns.yaml ]; then
-#    mos
-#    mosudp
-#  else
-#    clashdns
-#  fi
+elif [ "$dns_hijack" = "mosdns" ]; then
+  if [ -f ${path}/dns/mosdns.yaml ]; then
+    mos
+    mosudp
+  else
+    clashdns
+  fi
 else
   clashdns
 fi
