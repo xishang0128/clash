@@ -446,7 +446,7 @@ else
 fi
 }
 
-if ["$dns_hijack" = "auto"]; then
+if [ "$dns_hijack" = "auto" ]; then
   if [ "$adgh" = "true" ]; then
     if [ -f ${path}/dns/AdGuardHome.yaml ]; then
       dns_port=$(cat ${path}/dns/AdGuardHome.yaml | grep "  port:" | awk -F ': ' '{print $2}')
