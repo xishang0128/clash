@@ -46,13 +46,6 @@ else
 fi
 }
 
-dns(){
-if [ "$mosdns" == "true" ]; then
-echo 1
-else
-echo 0
-fi
-}
 
 gettun
 getdns

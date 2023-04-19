@@ -115,12 +115,24 @@ plugins:
         - _return
 
 servers:
-  - exec: entrance
-    listeners:
-      - protocol: udp
-        addr: localhost:2053
-
-  - exec: entrance_clash
-    listeners:
-      - protocol: udp
-        addr: localhost:3053
+- exec: entrance
+  listeners:
+    - protocol: udp
+      addr: localhost:2053
+      ads: a
+      sdas: a
+      sadasd: a
+      adas: a
+      asdsa: a
+      asd: a
+      dawd: a
+      weq: a
+      dfas: a
+    - protocol: tcp
+      addr: localhost:3053
+    - protocol: http
+      addr: localhost:3053
+- exec: entrance_clash
+  listeners:
+    - protocol: udp
+      addr: localhost:3053
