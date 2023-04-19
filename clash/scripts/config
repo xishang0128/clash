@@ -22,7 +22,7 @@ ignore_out_list=()
 
 
 bin_name="clash"
-bin_path=$(cd $(dirname `realpath $0`); cd ../; pwd)
+path=$(cd $(dirname `realpath $0`); cd ../; pwd)
 bin_path="${path}/bin/${bin_name}"
 run_path="${path}/run"
 pid_file="${run_path}/${bin_name}.pid"
