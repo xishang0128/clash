@@ -123,11 +123,10 @@ start_adgh() {
 start_mos() {
   ulimit -SHn 1000000
   if [ -f ${path}/dns/mosdns.yaml ]; then
-    if ${path}/bin/mosdns start -d ${path}/clash -c ${path}/dns/mosdns.yaml > ${run_path}/check.log 2>&1 ; then
-      kill $(echo -n $!)
-      log Info "starting adghome service."
-      nohup busybox setuidgid ${user_group} ${path}/bin/mosdns start -d ${path}/clash -c ${path}/dns/mosdns.yaml > /dev/null &
-      echo -n $! > ${path}/dns/.mos.pid
+    log Info "starting adghome service."
+    nohup busybox setuidgid ${user_group} ${path}/bin/mosdns start -d ${path}/clash -c ${path}/dns/mosdns.yaml > /dev/null &
+    echo -n $! > ${path}/dns/.mos.pid
+    if (cat /proc/$(cat ${path}/dns/.mos.pid)/cmdline | grep -q mosdns); then
       return 0
     else
       log Error "configuration check failed, please check the ${run_path}/check.log file."
