@@ -123,7 +123,7 @@ start_adgh() {
 start_mos() {
   ulimit -SHn 1000000
   if [ -f ${path}/dns/mosdns.yaml ]; then
-    log Info "starting adghome service."
+    log Info "starting mosdns service."
     nohup busybox setuidgid ${user_group} ${path}/bin/mosdns start -d ${path}/clash -c ${path}/dns/mosdns.yaml > /dev/null &
     echo -n $! > ${path}/dns/.mos.pid
     if (cat /proc/$(cat ${path}/dns/.mos.pid)/cmdline | grep -q mosdns); then
@@ -213,12 +213,12 @@ start_service() {
       probe_tun_device && forward -I
       if [ "$adgh" = "true" ]; then
         if start_adgh && wait_adgh_listen ; then
-          log Info "adg home service is running. ( PID: $(cat ${path}/dns/.adgh.pid) )"
+          log Info "adghome service is running. ( PID: $(cat ${path}/dns/.adgh.pid) )"
         fi
       fi
       if [ "$mosdns" = "true" ]; then
         if start_mos && wait_mos_listen ; then
-          log Info "adg home service is running. ( PID: $(cat ${path}/dns/.mos.pid) )"
+          log Info "mosdns service is running. ( PID: $(cat ${path}/dns/.mos.pid) )"
         fi
       fi
       return 0
