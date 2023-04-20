@@ -44,8 +44,6 @@ plugins:
       - addr: https://api.atri.ink/dns
         dial_addr: "43.129.165.236"
         idle_timeout: 86400
-      - addr: https://175.178.80.157/dns-query
-        idle_timeout: 86400
 
   - tag: clash
     type: fast_forward
