@@ -87,7 +87,7 @@ start_bin() {
     clash)
       if ${bin_path} -t -d ${path}/${bin_name} > ${run_path}/check.log 2>&1 ; then
         log Info "starting ${bin_name} service."
-        nohup busybox setuidgid ${user_group} ${bin_path} -d ${path}/${bin_name} > ${path}/${bin_name}/${bin_name}_$(date +%Y%m%d%H%M).log 2> ${run_path}/error_${bin_name}.log &
+        nohup busybox setuidgid ${user_group} ${bin_path} -d ${path}/${bin_name} > ${path}/run/${bin_name}_$(date +%Y%m%d%H%M).log 2> ${run_path}/error.log &
         echo -n $! > ${pid_file}
         return 0
       else
