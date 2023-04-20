@@ -105,7 +105,7 @@ start_bin() {
 start_adgh() {
   ulimit -SHn 1000000
   if [ -f ${path}/dns/AdGuardHome.yaml ]; then
-    if ${path}/bin/adgh--check-config -w ${path}/dns > ${run_path}/check.log 2>&1 ; then
+    if ${path}/bin/adgh --check-config -w ${path}/dns > ${run_path}/check.log 2>&1 ; then
       log Info "starting adghome service."
       nohup busybox setuidgid ${user_group} ${path}/bin/adgh -w ${path}/dns --pidfile ${path}/dns/.adgh.pid > /dev/null &
       return 0
@@ -117,6 +117,22 @@ start_adgh() {
     log Info "starting adghome service."
     nohup busybox setuidgid ${user_group} ${path}/bin/adgh -w ${path}/dns --pidfile ${path}/dns/.adgh.pid > /dev/null &
     return 0
+  fi
+}
+
+start_mos() {
+  ulimit -SHn 1000000
+  if [ -f ${path}/dns/mosdns.yaml ]; then
+    if ${path}/bin/mosdns start -d ${path}/clash -c ${path}/dns/mosdns.yaml > ${run_path}/check.log 2>&1 ; then
+      kill $(echo -n $!)
+      log Info "starting adghome service."
+      nohup busybox setuidgid ${user_group} ${path}/bin/mosdns start -d ${path}/clash -c ${path}/dns/mosdns.yaml > /dev/null &
+      echo -n $! > ${path}/dns/.mos.pid
+      return 0
+    else
+      log Error "configuration check failed, please check the ${run_path}/check.log file."
+      return 1
+    fi
   fi
 }
 
@@ -158,6 +174,22 @@ wait_adgh_listen() {
   fi
 }
 
+wait_mos_listen() {
+  wait_count=0
+  mos_pid=$(busybox pidof mosdns)
+  find_netstat_path && \
+  check_mos_cmd="netstat -tnulp | grep -q mosdns" || \
+  check_mos_cmd="ls -lh /proc/${mos_pid}/fd | grep -q socket"
+  while [ ${mos_pid} ] && ! eval "${check_mos_cmd}" && [ ${wait_count} -lt 100 ] ; do
+    sleep 1 ; wait_count=$((${wait_count} + 1))
+  done
+  if [ ${mos_pid} ] && eval "${check_mos_cmd}" ; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 display_bin_status() {
   if bin_pid=$(busybox pidof ${bin_name}) ; then
     log Info "${bin_name} has started with the $(stat -c %U:%G /proc/${bin_pid}) user group."
@@ -183,6 +215,11 @@ start_service() {
       if [ "$adgh" = "true" ]; then
         if start_adgh && wait_adgh_listen ; then
           log Info "adg home service is running. ( PID: $(cat ${path}/dns/.adgh.pid) )"
+        fi
+      fi
+      if [ "$mosdns" = "true" ]; then
+        if start_mos && wait_mos_listen ; then
+          log Info "adg home service is running. ( PID: $(cat ${path}/dns/.mos.pid) )"
         fi
       fi
       return 0
@@ -212,6 +249,9 @@ stop_service() {
     display_bin_status
     if [ "$adgh" = "true" ]; then
       kill $(cat  ${path}/dns/.adgh.pid) || killall adgh
+    fi
+    if [ "$mosdns" = "true" ]; then
+      kill $(cat  ${path}/dns/.mos.pid) || killall mos
     fi
   fi
   rm -f ${pid_file} >> /dev/null 2>&1

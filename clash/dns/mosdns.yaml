@@ -1,16 +1,16 @@
 log:
   level: debug
-  file: /data/adb/clash/run/mosdns.txt
+  file: /data/adb/clash/dns/mosdns.log
 
 data_providers:
   - tag: geosite
-    file: /data/adb/clash/clash/geosite.dat
+    file: ./geosite.dat
     auto_reload: false
   - tag: geoip
-    file: /data/adb/clash/clash/geoip.dat
+    file: ./geoip.dat
     auto_reload: false
   - tag: hosts
-    file: ./hosts.txt
+    file: /data/adb/clash/dns/hosts.txt
 
 plugins:
 
@@ -93,15 +93,14 @@ plugins:
       - hosts
       - if: direct_domain
         exec:
-        - _misc_optm
-        - _prefer_ipv4
-        - cache
-        - _pad_query
-        - cn
-        - _return
+          - _misc_optm
+          - _prefer_ipv4
+          - cache
+          - _pad_query
+          - cn
+          - _return
         else_exec:
-        - clash
-        - _return
+          - clash
 
   - tag: entrance
     type: sequence
